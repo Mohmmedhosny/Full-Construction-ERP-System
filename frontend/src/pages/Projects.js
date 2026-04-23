@@ -13,7 +13,9 @@ export default function Projects() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: '', code: '', location: '', start_date: '', end_date: '', status: 'planning', priority: 'medium', budget: '' });
+  const [formError, setFormError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ name: '', code: '', location: '', start_date: '', end_date: '', status: 'planning', priority: 'medium', budget: '0' });
 
   const fetchProjects = async () => {
     try {
@@ -30,12 +32,25 @@ export default function Projects() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setFormError('');
+    setSubmitting(true);
     try {
-      await projectsAPI.createProject(form);
+      const payload = { ...form, budget: parseFloat(form.budget) || 0 };
+      await projectsAPI.createProject(payload);
       setShowModal(false);
-      setForm({ name: '', code: '', location: '', start_date: '', end_date: '', status: 'planning', priority: 'medium', budget: '' });
+      setForm({ name: '', code: '', location: '', start_date: '', end_date: '', status: 'planning', priority: 'medium', budget: '0' });
       fetchProjects();
-    } catch (err) { alert('Error creating project'); }
+    } catch (err) {
+      const data = err.response?.data;
+      if (data) {
+        const messages = Object.entries(data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ');
+        setFormError(messages);
+      } else {
+        setFormError('Failed to create project. Please check all fields and try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -97,14 +112,19 @@ export default function Projects() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) { setShowModal(false); setFormError(''); } }}>
           <div className="modal">
             <div className="modal-header">
               <h3 className="modal-title">New Project</h3>
-              <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
+              <button className="close-btn" onClick={() => { setShowModal(false); setFormError(''); }}>×</button>
             </div>
             <form onSubmit={handleCreate}>
               <div className="modal-body">
+                {formError && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 14px', borderRadius: 6, fontSize: 13, marginBottom: 16 }}>
+                    {formError}
+                  </div>
+                )}
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">Project Name *</label>
@@ -155,8 +175,8 @@ export default function Projects() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Create Project</button>
+                <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); setFormError(''); }}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={submitting}>{submitting ? 'Creating...' : 'Create Project'}</button>
               </div>
             </form>
           </div>
