@@ -37,8 +37,7 @@ function App() {
   }, []);
 
   const handleLogin = (tokens) => {
-    localStorage.setItem('access_token', tokens.access);
-    localStorage.setItem('refresh_token', tokens.refresh);
+    localStorage.setItem('access_token', tokens.token || tokens.access);
     setIsAuthenticated(true);
   };
 

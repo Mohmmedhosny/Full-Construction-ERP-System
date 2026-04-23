@@ -4,7 +4,7 @@ from projects.models import Project
 
 
 class Budget(models.Model):
-    project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name='budget')
+    project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name='project_budget')
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     contingency_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=10)
     notes = models.TextField(blank=True)
